@@ -1,0 +1,746 @@
+{
+  "name": "AI Lead Management",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -320
+      ],
+      "id": "52e1384d-2abd-49e7-9ed3-2bb820ae04e6",
+      "name": "Telegram Trigger",
+      "webhookId": "8c58f65c-e692-4733-9780-0fd7b6fecbe4",
+      "credentials": {
+        "telegramApi": {
+          "id": "QA6skQopO5EYOvtN",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "619b18a4-aa51-466a-aa51-6b1e775ef1c2",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        -320
+      ],
+      "id": "3ab9652a-f66b-42af-ae01-a8bf34f55cd5",
+      "name": "If /start"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "👋 Welcome!\n\n  To process your request, please send us a message with the following details:\n\n  • Your name\n  • Phone number\n  • Email (optional)\n  • What you're interested in\n  • Your budget\n  • How soon you need this\n  • Any additional details about your request",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        -464
+      ],
+      "id": "ea537574-5003-4e18-a269-13e95088a535",
+      "name": "Send a text message",
+      "webhookId": "2fdf0059-8d9f-44a1-b603-8b6dd6513f3d",
+      "credentials": {
+        "telegramApi": {
+          "id": "QA6skQopO5EYOvtN",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are a data parser. Extract the following fields from the user's message and return ONLY a JSON object with no explanations.\n\n  If a field is not mentioned in the message, return null for that field.\n\n  Fields to extract:\n  - Full Name: person's full name\n  - Phone Number: phone number in any format\n  - Email: email address\n  - What are you interested in?: what product or service they want\n  - What is your budget?: budget amount or range\n  - How soon do you need this?: urgency or timeframe\n  - Tell us more about your request: brief summary of the request in your own words\n  - Always return valid JSON only. No text before or after the JSON object.\n\nExample input:\n  \"Hi, I'm John, my number is 123456789, I want a bike\"\n\n  Example output:\n  {\n    \"Full Name\": \"John\",\n    \"Phone Number\": \"123456789\",\n    \"Email\": null,\n    \"What are you interested in?\": \"bike\",\n    \"What is your budget?\": null,\n    \"How soon do you need this?\": null,\n    \"Tell us more about your request\": \"User wants to buy a bike\"\n  }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        -256
+      ],
+      "id": "4d982af2-f5ca-457b-9a8b-6590e98a35a6",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ba0ba6cf-67ff-4a98-b5bb-03e82e413dad",
+              "leftValue": "={{ $json['Phone Number'].toString().length }}",
+              "rightValue": 9,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        128
+      ],
+      "id": "005c21d6-65b9-4eb9-8322-1959826ecc57",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "4845a1c1-d202-4592-8d66-60306087edb5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0veTswQqVlHlLBQh",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n    json: JSON.parse($json.output)\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -256
+      ],
+      "id": "973bfa77-8614-4b25-a26a-f6c09e85574c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json['Full Name'] }}\n  Phone: {{ $json['Phone Number'] }}\n  Email: {{ $json.Email }}\n  Interest: {{ $json['What are you interested in?'] }}\n  Budget: {{ $json['What is your budget?'] }}\n  Urgency: {{ $json['How soon do you need this?'] }}\n  Details: {{ $json['Tell us more about your request'] }}",
+        "options": {
+          "systemMessage": "You are a lead qualification specialist. Your job is to evaluate incoming leads and assign them a temperature score based on the provided data.\n\n  Scoring criteria:\n\n  HOT lead (score: \"hot\"):\n  - Has a specific budget AND high urgency (ASAP or within 1 week)\n  - Provided detailed information about their request\n\n  WARM lead (score: \"warm\"):\n  - Has either a budget OR urgency but not both\n  - Request is somewhat specific\n\n  COLD lead (score: \"cold\"):\n  - No budget mentioned\n  - No urgency or just exploring\n  - Vague or minimal request details\n\n  Return ONLY this JSON, no explanations:\n  {\n    \"score\": \"hot\" | \"warm\" | \"cold\",\n    \"reason\": \"brief explanation in English, max 1 sentence\"\n  }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        128
+      ],
+      "id": "823c2a8e-d951-4cec-b02d-56b7c874e0cf",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        320
+      ],
+      "id": "de14cb5b-3433-44cb-b4a8-98e9c9ae3ba1",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "0veTswQqVlHlLBQh",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const leadData = $('Filter').all();\n\n  return items.map((item, index) => {\n    const qualification = JSON.parse(item.json.output);\n    return {\n      json: {\n        ...leadData[index].json,\n        score: qualification.score,\n        reason: qualification.reason\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        128
+      ],
+      "id": "7a967477-d769-48ef-ad61-425717ee431a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.score }}",
+                    "rightValue": "hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9c93bae9-d1b3-442d-bccd-0ee9c432a993"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        128
+      ],
+      "id": "c00c819f-cbdc-4438-99d6-e4be26ed5d51",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=New hot lead!\n{{ $json['Full Name'] }}\n{{ $json['Phone Number'] }}\n{{ $json.Email }}\n{{ $json['What are you interested in?'] }}\n{{ $json['What is your budget?'] }}\n{{ $json['How soon do you need this?'] }}\n{{ $json['Tell us more about your request'] }}\n{{ $json.score }}\n{{ $json.reason }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        -48
+      ],
+      "id": "cd88b463-7b00-4cf3-a57e-d36db3a8467f",
+      "name": "Send a text message1",
+      "webhookId": "89afacb6-6d75-4e55-ba2d-5f004d9d94f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "QA6skQopO5EYOvtN",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TqMoLheB01-IRVS1lsqVbokIih9D9eb6vUdzsfGfgmI",
+          "mode": "list",
+          "cachedResultName": "Lead",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TqMoLheB01-IRVS1lsqVbokIih9D9eb6vUdzsfGfgmI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TqMoLheB01-IRVS1lsqVbokIih9D9eb6vUdzsfGfgmI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{ $json['Full Name'] }}",
+            "Phone Number": "={{ $json['Phone Number'] }}",
+            "Email": "={{ $json.Email }}",
+            "What are you interested in?": "={{ $json['What are you interested in?'] }}",
+            "What is your budget?": "={{ $json['What is your budget?'] }}",
+            "How soon do you need this?": "={{ $json['How soon do you need this?'] }}",
+            "Tell us more about your request": "={{ $json['Tell us more about your request'] }}",
+            "Score": "={{ $json.score }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "What are you interested in?",
+              "displayName": "What are you interested in?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "What is your budget?",
+              "displayName": "What is your budget?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "How soon do you need this?",
+              "displayName": "How soon do you need this?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tell us more about your request",
+              "displayName": "Tell us more about your request",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        128
+      ],
+      "id": "6bfbeabd-70b3-43f2-89e8-d8bd7ee29a0e",
+      "name": "Lead",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "O1xgooGJ6YMlQo3A",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU",
+          "mode": "list",
+          "cachedResultName": "Forms",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1883544410,
+          "mode": "list",
+          "cachedResultName": "Ответы на форму (1)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU/edit#gid=1883544410"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{ $json['Full Name'] }}",
+            "Email": "={{ $json.Email }}",
+            "Phone Number": "={{ $json['Phone Number'] }}",
+            "What are you interested in?": "={{ $json['What are you interested in?'] }}",
+            "What is your budget?": "={{ $json['What is your budget?'] }}",
+            "How soon do you need this?": "={{ $json['How soon do you need this?'] }}",
+            "Tell us more about your request": "={{ $json['Tell us more about your request'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "What are you interested in?",
+              "displayName": "What are you interested in?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "What is your budget?",
+              "displayName": "What is your budget?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "How soon do you need this?",
+              "displayName": "How soon do you need this?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tell us more about your request",
+              "displayName": "Tell us more about your request",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        -256
+      ],
+      "id": "184c0838-ae4f-44f1-8a13-2b771ad4af2e",
+      "name": "CRM",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "O1xgooGJ6YMlQo3A",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU",
+          "mode": "list",
+          "cachedResultName": "Forms",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1883544410,
+          "mode": "list",
+          "cachedResultName": "Ответы на форму (1)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11UES8wD4ZDiA7a83VXEf9CT_Tj9faqypfVjC73pXGMU/edit#gid=1883544410"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        128
+      ],
+      "id": "bc9aa7a1-c851-40ab-83a4-957a6b34d653",
+      "name": "CRM Triger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "jdlbbkYPwW6QczRL",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If /start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If /start": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    },
+    "CRM Triger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e21c23b2-b2bb-42eb-bda9-343d149ce8e9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2dd8e87d6db3a329c2a6aa14b0df52ef770a7528964d431c55bbb171aa0bb25c"
+  },
+  "id": "HsOojwyafNEJd6OU",
+  "tags": []
+}
